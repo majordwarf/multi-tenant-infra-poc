@@ -31,14 +31,14 @@ Helm       - Package Manager For Kubernetes
 │   │   ├── frontend-ingress.yaml    - FE Ingress configuration
 │   │   ├── frontend-service.yaml    - FE Service configuration
 │   │   ├── kafka-cluster.yaml       - Kafka Cluster configuration
-│   │   ├── postgres-cluster.yaml    - Postgres Cluster configuration
-│   └── Chart.yaml                   - Helm Chart metadata
+│   │   └── postgres-cluster.yaml    - Postgres Cluster configuration
+│   ├── Chart.yaml                   - Helm Chart metadata
 │   └── values.yaml                  - Helm Chart values
 ├── base/                            - Terraform configuration
 │   ├── modules/                     - Reusable modules
 │   │   ├── ***/main.tf              - Module configuration
 │   │   ├── ***/outputs.tf           - Module outputs
-│   │   ├── ***/variables.tf         - Module variables
+│   │   └── ***/variables.tf         - Module variables
 │   ├── main.tf                      - Main configuration
 │   ├── providers.tf                 - Provider configuration
 │   ├── terraform.tfvars             - Terraform variables
