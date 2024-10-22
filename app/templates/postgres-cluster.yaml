@@ -1,0 +1,30 @@
+{{- if and (eq .Values.postgresql.deployment.mode "dedicated") .Values.postgresql.deployment.dedicated.enabled }}
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.postgresql.deployment.dedicated.name }}
+spec:
+  postgresVersion: 14
+  instances:
+    {{- range .Values.postgresql.deployment.dedicated.instances }}
+    - name: {{ .name }}
+      replicas: {{ .replicas }}
+      resources:
+        limits:
+          cpu: {{ .cpu }}
+          memory: {{ .memory }}
+      dataVolumeClaimSpec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: {{ .storage }}
+    {{- end }}
+  users:
+    {{- range .Values.postgresql.deployment.dedicated.instances.0.users }}
+    - name: {{ .name }}
+      role: {{ .role }}
+    {{- end }}
+  databases:
+    - name: {{ .Values.postgresql.deployment.dedicated.instances.0.database }}
+{{- end }}

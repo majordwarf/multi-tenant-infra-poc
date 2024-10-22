@@ -1,0 +1,22 @@
+{{- if and (eq .Values.kafka.deployment.mode "dedicated") .Values.kafka.deployment.dedicated.enabled }}
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.kafka.deployment.dedicated.name }}
+spec:
+  kafka:
+    version: 3.3.1
+    replicas: {{ .Values.kafka.deployment.dedicated.kafka.replicas }}
+    config:
+      {{- toYaml .Values.kafka.deployment.dedicated.kafka.config | nindent 6 }}
+    resources:
+      {{- toYaml .Values.kafka.deployment.dedicated.kafka.resources | nindent 6 }}
+    storage:
+      type: {{ .Values.kafka.deployment.dedicated.kafka.storage.type }}
+      size: {{ .Values.kafka.deployment.dedicated.kafka.storage.size }}
+  zookeeper:
+    replicas: {{ .Values.kafka.deployment.dedicated.zookeeper.replicas }}
+    storage:
+      type: {{ .Values.kafka.deployment.dedicated.zookeeper.storage.type }}
+      size: {{ .Values.kafka.deployment.dedicated.zookeeper.storage.size }}
+{{- end }}

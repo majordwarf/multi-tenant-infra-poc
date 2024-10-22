@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.backend.name }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+    app: {{ .Values.backend.name }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "common.selectorLabels" . | nindent 6 }}
+      app: {{ .Values.backend.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "common.selectorLabels" . | nindent 8 }}
+        app: {{ .Values.backend.name }}
+    spec:
+      containers:
+        - name: {{ .Values.backend.name }}
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            # PostgreSQL Configuration
+            {{- if eq .Values.postgresql.deployment.mode "dedicated" }}
+            - name: POSTGRES_HOST
+              value: {{ .Release.Name }}-{{ .Values.postgresql.deployment.dedicated.name }}
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.deployment.dedicated.instances.0.database }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres-auth
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres-auth
+                  key: password
+            {{- else }}
+            - name: POSTGRES_HOST
+              value: {{ .Values.postgresql.deployment.external.host }}
+            - name: POSTGRES_PORT
+              value: "{{ .Values.postgresql.deployment.external.port }}"
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.deployment.external.database }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.deployment.external.existingSecret }}
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.deployment.external.existingSecret }}
+                  key: password
+            {{- end }}
+
+            # Kafka Configuration
+            {{- if eq .Values.kafka.deployment.mode "dedicated" }}
+            - name: KAFKA_BROKERS
+              value: "{{ .Release.Name }}-{{ .Values.kafka.deployment.dedicated.name }}-kafka-bootstrap:9092"
+            {{- else }}
+            - name: KAFKA_BROKERS
+              value: {{ .Values.kafka.deployment.external.brokers }}
+            {{- if .Values.kafka.deployment.external.ssl.enabled }}
+            - name: KAFKA_SSL_ENABLED
+              value: "true"
+            - name: KAFKA_SSL_CA
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kafka.deployment.external.ssl.existingSecret }}
+                  key: ca.crt
+            - name: KAFKA_SSL_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kafka.deployment.external.ssl.existingSecret }}
+                  key: tls.crt
+            - name: KAFKA_SSL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kafka.deployment.external.ssl.existingSecret }}
+                  key: tls.key
+            {{- end }}
+            {{- if .Values.kafka.deployment.external.sasl.enabled }}
+            - name: KAFKA_SASL_ENABLED
+              value: "true"
+            - name: KAFKA_SASL_MECHANISM
+              value: {{ .Values.kafka.deployment.external.sasl.mechanism }}
+            - name: KAFKA_SASL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kafka.deployment.external.sasl.existingSecret }}
+                  key: username
+            - name: KAFKA_SASL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kafka.deployment.external.sasl.existingSecret }}
+                  key: password
+            {{- end }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http

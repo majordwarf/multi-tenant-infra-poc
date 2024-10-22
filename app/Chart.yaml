@@ -1,0 +1,13 @@
+apiVersion: v2
+name: full-stack-app
+description: A Helm chart for deploying full-stack application with React, NodeJS, Postgres, and Kafka
+version: 0.1.0
+dependencies:
+  - name: postgresql-operator
+    repository: https://crunchydata.github.io/postgres-operator-charts/
+    version: 5.3.0
+    condition: postgresql-operator.enabled
+  - name: kafka-operator
+    repository: https://strimzi.io/charts/
+    version: 0.32.0
+    condition: kafka-operator.enabled
